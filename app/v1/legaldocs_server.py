@@ -10,7 +10,7 @@ mcp = FastMCP(name="legaldocs-mcp", host="0.0.0.0", stateless_http=True)
 LEGAL_DOCS_URL = os.getenv("LEGAL_DOCS_URL")
 
 @mcp.tool(
-    name="get_legal_documents", 
+    name="get_legal_docs_templates", 
     description="Get available legal document templates name from the external service."
 )
 def get_available_temples() -> str:
