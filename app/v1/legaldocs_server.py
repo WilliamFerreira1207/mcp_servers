@@ -1,8 +1,10 @@
 from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
-from schemas.response_schemas import LD_GetTemplatesResponse, LD_UploadTemplateResponse
-import base64
+from schemas.response_schemas import LD_GetTemplatesResponse, LD_UploadTemplateResponse, LD_GenerateDocResponse
+from schemas.request_schemas import LD_GenerateDocRequest, files_info
 from io import BytesIO
+
+import base64
 import os
 import requests
 
@@ -40,10 +42,13 @@ def upload_legal_doc_template(base64_content: str, filename: str) -> LD_UploadTe
     """
     try:
         print(f"Uploading template: {filename}")
-        file_bytes = base64.b64decode(base64_content)
+        print(f"Base64 content size: {len(base64_content)} characters")
+        print(f"First 100 chars': {base64_content[:100]}")
+        b64 = base64_content.split(",")[-1] if "," in base64_content else base64_content
+        file_bytes = base64.b64decode(b64)
         print(f"Decoded file size: {len(file_bytes)} bytes")
         files = {
-            'file': (filename if filename.endswith(".pdf") else f"{filename}.pdf", BytesIO(file_bytes), 'application/pdf')
+            'file': (filename.strip().split(".")[0] if filename.strip().endswith(".pdf") else f"{filename.strip()}", BytesIO(file_bytes), 'application/pdf')
         }
         print(f"Prepared files for upload: {files['file'][0]}, size: {len(file_bytes)} bytes")
         
@@ -73,6 +78,63 @@ def upload_legal_doc_template(base64_content: str, filename: str) -> LD_UploadTe
         return LD_UploadTemplateResponse(
             result="Error uploading template",
             filename=filename,
+            status_code=500,
+            success=False
+        )
+
+@mcp.tool(
+    name="generate_legal_doc_from_template",
+    structured_output=True
+)
+def generate_legal_doc_from_template(request: LD_GenerateDocRequest) -> LD_GenerateDocResponse:
+    """
+    Upload a legal document template to the external service.
+    Args:
+        request (LD_GenerateDocRequest): The request object containing:
+            - info_files (List[files_info]): List of files information. This should include:
+                - filename (str): The name of the file.
+                - content (str): The base64 encoded content of the file.
+            - output_filename (str): The desired output filename.
+        
+
+    Returns:
+    """
+    try:
+        print(f"Generating document from template: {request.output_filename}")
+        print("Uploading Info Files")
+        files = []
+        for f in request.info_files:
+            print(f" - {f.filename}")
+            b64 = f.content.split(",")[-1] if "," in f.content else f.content
+            file_bytes = base64.b64decode(b64)
+            file_name = f.filename if f.filename.strip().endswith(".pdf") else f"{f.filename.strip()}.pdf"
+            files.append((
+                "files",
+                (file_name, BytesIO(file_bytes), "application/pdf")
+            ))
+        print(f"Prepared {len(files)} info files for upload.")
+        response = requests.post(f"{LEGAL_DOCS_URL}/upload_unstructured_document", files=files)
+        print(f"Response status code: {response.status_code}")
+        print(f"Response content: {response.json()}")
+        if response.status_code == 200:
+            return LD_GenerateDocResponse(
+                result=response.json().get("message", "Document generated successfully"),
+                filenames=response.json().get("document_names", []),
+                status_code=response.status_code,
+                success=True,
+                
+            )
+        else:
+            return LD_GenerateDocResponse(
+                result=f"Failed to generate document: {response.text}",
+                filenames=[],
+                status_code=response.status_code,
+                success=False
+            )
+    except Exception as e:
+        return LD_GenerateDocResponse(
+            result=f"Error generating document: {e}",
+            filenames=[],
             status_code=500,
             success=False
         )
