@@ -15,17 +15,18 @@ LEGAL_DOCS_URL = os.getenv("LEGAL_DOCS_URL")
 
 @mcp.tool(
     name="get_legal_docs_templates", 
-    description="Get available legal document templates name from the external service."
+    description="Get available legal document templates name from the external service.",
+    structured_output=True,
 )
-def get_available_temples() -> str:
+def get_available_temples() -> LD_GetTemplatesResponse:
     try:
         response = requests.get(f"{LEGAL_DOCS_URL}/get-templates")
         if response.status_code == 200:
             response = response.json().get("available templates", [])
             print(f"Response from legal docs service: {response}")
-            return LD_GetTemplatesResponse(templates=response).model_dump_json()
+            return LD_GetTemplatesResponse(templates=response, result="Success")
     except Exception as e:
-        return "Error retrieving legal documents"
+        return LD_GetTemplatesResponse(templates=[], result="Error retrieving legal documents")
 
 @mcp.tool(
     name="upload_legal_doc_template",

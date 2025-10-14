@@ -3,6 +3,7 @@ from typing import List, Optional
 
 class LD_GetTemplatesResponse(BaseModel):
     templates: List[str]
+    result: str = "Success"
     
 class LD_UploadTemplateResponse(BaseModel):
     filename: str
