@@ -11,8 +11,8 @@ class LD_UploadTemplateResponse(BaseModel):
     success: bool
     result: str
 
-class LD_GenerateDocResponse(BaseModel):
-    filenames: List[str]
+class LD_UploadFileTemplateCompletitionResponse(BaseModel):
+    filename: str
     status_code: int
     success: bool
     result: str

@@ -1,10 +1,10 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-class files_info(BaseModel):
+class LD_UploadFileTemplateCompletition(BaseModel):
     filename: str
-    content: str
+    file_path: str
 
-class LD_GenerateDocRequest(BaseModel):
-    info_files: List[files_info]
-    output_filename: str
+# class LD_GenerateDocRequest(BaseModel):
+#     info_files: List[files_info]
+#     output_filename: str
