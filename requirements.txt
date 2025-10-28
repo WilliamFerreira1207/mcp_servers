@@ -3,3 +3,4 @@ fastapi
 python-dotenv
 requests
 uvicorn
+requests_toolbelt
